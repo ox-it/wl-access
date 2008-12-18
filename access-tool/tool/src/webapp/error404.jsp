@@ -24,7 +24,7 @@
 <li>You should check your typing!</li>
 <li>If the link was sent to you in an email then check that addess has not been split over two or more lines by your email client. You may have to reassemble the URL manually. You can do this easily by copying the text and pasting the various parts back together in the location bar of your browser.</li>
 <li>Have you been sent the wrong address? Perhaps you should confirm with the person that sent you the link that they havent made a mistake? </li>
-</ol>
+</ul>
  </body>
 </html>
 
