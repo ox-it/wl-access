@@ -1,3 +1,4 @@
+<%@ page import="org.sakaiproject.component.cover.ServerConfigurationService" %>
 <html>
  <head>
 
@@ -6,9 +7,8 @@
 
   <title>Access to the requested resource is forbidden - 403 Error</title>
 
-  <link href="http://beta.weblearn.ox.ac.uk/sakai-search-tool/styles/default//searchStyle.css" type="text/css" rel="stylesheet" media="all" />
-  <link href="http://beta.weblearn.ox.ac.uk/local-skins/tool_base.css" type="text/css" rel="stylesheet" media="all" />
-  <link href="http://beta.weblearn.ox.ac.uk/local-skins/weblearn-beta/tool.css" type="text/css" rel="stylesheet" media="all" />
+  <link href="<%= ServerConfigurationService.getString("skin.repo", "/library/skin") %>/<%= ServerConfigurationService.getString("skin.default", "default") %>/tool_base.css" type="text/css" rel="stylesheet" media="all" />
+  <link href="<%= ServerConfigurationService.getString("skin.repo", "/library/skin") %>/<%= ServerConfigurationService.getString("skin.default", "default") %>/tool.css" type="text/css" rel="stylesheet" media="all" />
 
  </head>
  <body>
