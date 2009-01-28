@@ -1,4 +1,5 @@
 <%@ page import="org.sakaiproject.component.cover.ServerConfigurationService" %>
+<%@ page session="false" %>
 <html>
  <head>
 
