@@ -32,11 +32,13 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.logging.Log; 
+import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.authz.api.SecurityAdvisor;
+import org.sakaiproject.authz.api.TwoFactorAuthentication;
 import org.sakaiproject.authz.cover.SecurityService;
 import org.sakaiproject.cheftool.VmServlet;
+import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.EntityAccessOverloadException;
 import org.sakaiproject.entity.api.EntityCopyrightException;
@@ -72,6 +74,18 @@ import org.sakaiproject.util.Web;
  */
 public class AccessServlet extends VmServlet
 {
+	/** How to route a login request. */
+	enum LoginRoute {
+		/** Two Factor Authentication for the login. */
+		TWOFACTOR,
+		/** Send through the container for the login. */
+		CONTAINER,
+		/** Get Sakai to prompt for a username/password. */
+		SAKAI,
+		/** Have Sakai prompt as to which way the login should go if more than one option. */
+		NONE
+	};
+	
 	/** Our log (commons). */
 	private static Log M_log = LogFactory.getLog(AccessServlet.class);
 
@@ -170,6 +184,7 @@ public class AccessServlet extends VmServlet
 	 */
 	public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException
 	{
+		System.out.println("AccessServlet.doGet");
 		// process any login that might be present
 		basicAuth.doLogin(req);
 		// catch the login helper requests
@@ -177,7 +192,7 @@ public class AccessServlet extends VmServlet
 		String[] parts = option.split("/");
 		if ((parts.length == 2) && ((parts[1].equals("login"))))
 		{
-			doLogin(req, res, null);
+			doLogin(req, res, null, LoginRoute.SAKAI);
 		}	
 		else
 		{
@@ -199,6 +214,7 @@ public class AccessServlet extends VmServlet
 	 */
 	public void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException
 	{
+		System.out.println("AccessServlet.doPost");
 		// process any login that might be present
 		basicAuth.doLogin(req);
 		// catch the login helper posts
@@ -206,7 +222,7 @@ public class AccessServlet extends VmServlet
 		String[] parts = option.split("/");
 		if ((parts.length == 2) && ((parts[1].equals("login"))))
 		{
-			doLogin(req, res, null);
+			doLogin(req, res, null, LoginRoute.SAKAI);
 		}
 
 		else
@@ -225,6 +241,7 @@ public class AccessServlet extends VmServlet
 	 */
 	public void dispatch(HttpServletRequest req, HttpServletResponse res) throws ServletException
 	{
+		System.out.println("AccessServlet.dispatch");
 		ParameterParser params = (ParameterParser) req.getAttribute(ATTR_PARAMS);
 
 		// get the path info
@@ -316,6 +333,8 @@ public class AccessServlet extends VmServlet
 		// pre-process the path
 		String origPath = path;
 		path = preProcessPath(path, req);
+		
+		System.out.println("AccessServlet.dispatch ["+path+"]");
 
 		// what is being requested?
 		Reference ref = EntityManager.newReference(path);
@@ -346,18 +365,34 @@ public class AccessServlet extends VmServlet
 
 		catch (EntityPermissionException e)
 		{
+			System.out.println("AccessServlet.dispatch EntityPermissionException ["+e.getLocalizedMessage()+"]");
 			// the end user does not have permission - offer a login if there is no user id yet established
 			// if not permitted, and the user is the anon user, let them login
-			if (SessionManager.getCurrentSessionUserId() == null)
-			{
+			
+			TwoFactorAuthentication twoFactorAuthentication = 
+				(TwoFactorAuthentication)ComponentManager.get(TwoFactorAuthentication.class);
+			
+			if (SessionManager.getCurrentSessionUserId() == null) {
+				
 				try {
-					doLogin(req, res, origPath);
+					doLogin(req, res, origPath, LoginRoute.SAKAI);
 				} catch ( IOException ioex ) {}
-				return;
+				//return;
+			
+			} else if (twoFactorAuthentication.isTwoFactorRequired(ref.getReference())
+					&& !twoFactorAuthentication.hasTwoFactor())	{
+				
+					try {
+						doLogin(req, res, origPath, LoginRoute.TWOFACTOR);
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				
+			} else {
+				// otherwise reject the request
+				sendError(res, HttpServletResponse.SC_FORBIDDEN);
 			}
-
-			// otherwise reject the request
-			sendError(res, HttpServletResponse.SC_FORBIDDEN);
 		}
 
 		catch (EntityAccessOverloadException e)
@@ -442,14 +477,14 @@ public class AccessServlet extends VmServlet
 	 *        The current request path, set ONLY if we want this to be where to redirect the user after successfull login
 	 * @throws IOException 
 	 */
-	protected void doLogin(HttpServletRequest req, HttpServletResponse res, String path) throws ToolException, IOException
+	protected void doLogin(HttpServletRequest req, HttpServletResponse res, String path, LoginRoute route) throws ToolException, IOException
 	{
+		System.out.println("AccessServlet.doLogin");
 		// if basic auth is valid do that
 		if ( basicAuth.doAuth(req,res) ) {
 			//System.err.println("BASIC Auth Request Sent to the Browser ");
 			return;
 		} 
-		
 		
 		// get the Sakai session
 		Session session = SessionManager.getCurrentSession();
@@ -468,10 +503,24 @@ public class AccessServlet extends VmServlet
 		}
 
 		// map the request to the helper, leaving the path after ".../options" for the helper
-		ActiveTool tool = ActiveToolManager.getActiveTool("sakai.login");
-		String context = req.getContextPath() + req.getServletPath() + "/login";
+		ActiveTool tool = null;
+		String context = req.getContextPath() + req.getServletPath() + "/login"; 
+		String loginPath = "";
+		
+		if (LoginRoute.TWOFACTOR.equals(route)) {
+			tool = ActiveToolManager.getActiveTool("sakai.twofactor");
+			loginPath = "/2flogin";
+			
+		} else {
+			tool = ActiveToolManager.getActiveTool("sakai.login");
+			loginPath = "/relogin";
+			
+		}
+		
+		System.out.println("AccessServlet.doLogin ["+context+"]");
 		tool.help(req, res, context, "/login");
 	}
+	
 
 	/** create the info */
 	protected AccessServletInfo newInfo(HttpServletRequest req)
