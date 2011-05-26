@@ -184,7 +184,6 @@ public class AccessServlet extends VmServlet
 	 */
 	public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException
 	{
-		System.out.println("AccessServlet.doGet");
 		// process any login that might be present
 		basicAuth.doLogin(req);
 		// catch the login helper requests
@@ -214,7 +213,6 @@ public class AccessServlet extends VmServlet
 	 */
 	public void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException
 	{
-		System.out.println("AccessServlet.doPost");
 		// process any login that might be present
 		basicAuth.doLogin(req);
 		// catch the login helper posts
@@ -241,7 +239,6 @@ public class AccessServlet extends VmServlet
 	 */
 	public void dispatch(HttpServletRequest req, HttpServletResponse res) throws ServletException
 	{
-		System.out.println("AccessServlet.dispatch");
 		ParameterParser params = (ParameterParser) req.getAttribute(ATTR_PARAMS);
 
 		// get the path info
@@ -333,8 +330,6 @@ public class AccessServlet extends VmServlet
 		// pre-process the path
 		String origPath = path;
 		path = preProcessPath(path, req);
-		
-		System.out.println("AccessServlet.dispatch ["+path+"]");
 
 		// what is being requested?
 		Reference ref = EntityManager.newReference(path);
@@ -365,7 +360,6 @@ public class AccessServlet extends VmServlet
 
 		catch (EntityPermissionException e)
 		{
-			System.out.println("AccessServlet.dispatch EntityPermissionException ["+e.getLocalizedMessage()+"]");
 			// the end user does not have permission - offer a login if there is no user id yet established
 			// if not permitted, and the user is the anon user, let them login
 			
