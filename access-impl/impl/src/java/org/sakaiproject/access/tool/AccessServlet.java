@@ -473,7 +473,6 @@ public class AccessServlet extends VmServlet
 	 */
 	protected void doLogin(HttpServletRequest req, HttpServletResponse res, String path, LoginRoute route) throws ToolException, IOException
 	{
-		System.out.println("AccessServlet.doLogin");
 		// if basic auth is valid do that
 		if ( basicAuth.doAuth(req,res) ) {
 			//System.err.println("BASIC Auth Request Sent to the Browser ");
@@ -510,8 +509,6 @@ public class AccessServlet extends VmServlet
 			loginPath = "/relogin";
 			
 		}
-		
-		System.out.println("AccessServlet.doLogin ["+context+"]");
 		tool.help(req, res, context, "/login");
 	}
 	
