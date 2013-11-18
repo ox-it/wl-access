@@ -483,11 +483,7 @@ public class AccessServlet extends VmServlet
 		Session session = SessionManager.getCurrentSession();
 
 		// set the return path for after login if needed (Note: in session, not tool session, special for Login helper)
-		if (path != null)
-		{
-			// where to go after
-			session.setAttribute(Tool.HELPER_DONE_URL, Web.returnUrl(req, Validator.escapeUrl(path)));
-		}
+		session.setAttribute(Tool.HELPER_DONE_URL, makeReturnURL(path, req));
 
 		// check that we have a return path set; might have been done earlier
 		if (session.getAttribute(Tool.HELPER_DONE_URL) == null)
@@ -511,7 +507,23 @@ public class AccessServlet extends VmServlet
 		}
 		tool.help(req, res, context, "/login");
 	}
-	
+
+	/**
+	 * Creates a URL to return to once login is complete
+	 * @param path  the path to the content being accessed
+	 * @param req   the current servlet request
+	 * @return      the URL to return to, <code>null</code> if not available
+	 */
+	protected String makeReturnURL(String path, HttpServletRequest req) {
+		String returnUrl = null;
+		if (path != null && req != null) {
+			returnUrl = Web.returnUrl(req, Validator.escapeUrl(path));
+			if (req.getQueryString() != null) {
+				returnUrl += "?" + req.getQueryString();
+			}
+		}
+		return returnUrl;
+	}
 
 	/** create the info */
 	protected AccessServletInfo newInfo(HttpServletRequest req)
