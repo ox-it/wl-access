@@ -483,7 +483,10 @@ public class AccessServlet extends VmServlet
 		Session session = SessionManager.getCurrentSession();
 
 		// set the return path for after login if needed (Note: in session, not tool session, special for Login helper)
-		session.setAttribute(Tool.HELPER_DONE_URL, makeReturnURL(path, req));
+		// the null check is important as it stops the HELPER_DONE_URL updating when inside the login helper
+		if (path != null) {
+			session.setAttribute(Tool.HELPER_DONE_URL, makeReturnURL(path, req));
+		}
 
 		// check that we have a return path set; might have been done earlier
 		if (session.getAttribute(Tool.HELPER_DONE_URL) == null)
