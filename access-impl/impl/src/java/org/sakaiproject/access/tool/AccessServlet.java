@@ -384,9 +384,6 @@ public class AccessServlet extends VmServlet
 						e1.printStackTrace();
 					}
 				
-			} else {
-				// otherwise reject the request
-				sendError(res, HttpServletResponse.SC_FORBIDDEN);
 			}
 			M_log.debug("dispatch(): ref: " + ref.getReference(), e);
 			sendError(res, HttpServletResponse.SC_FORBIDDEN);
